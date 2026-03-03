@@ -1,7 +1,7 @@
 // variables
-const allPokemons = [];        // master list of all Pokémon
-let filteredPokemons = [];     // filtered by search + types
-let currentIndex = 0;          // pagination index
+const allPokemons = [];
+let filteredPokemons = [];
+let currentIndex = 0;
 const pageSize = 20;           
 let search = "";               
 const selectedTypes = new Set();
@@ -21,9 +21,9 @@ async function getPokemonDetails(url) {
 
 async function getEveryPokemon() {
     const results = await getAllPokemon();
-    allPokemons.push(...results);               // store master list
-    filteredPokemons = [...allPokemons];        // initially show all
-    renderPokemon();                            // render first batch
+    allPokemons.push(...results);
+    filteredPokemons = [...allPokemons];
+    renderPokemon();
 }
 
 async function getAllTypes() {
@@ -54,13 +54,11 @@ async function renderPokemon() {
             return;
         }
 
-        // slice for paging
         const slice = filtered.slice(currentIndex, currentIndex + pageSize);
 
-        // fetch all Pokémon in parallel for this batch
+        
         const details = await Promise.all(slice.map(p => getPokemonDetails(p.url)));
 
-        // render
         details.forEach(pokemonInfo => {
             pokemonContainer.innerHTML += `
                 <div class="pokemonCard">
@@ -72,7 +70,6 @@ async function renderPokemon() {
 
         currentIndex += pageSize;
 
-        // show/hide Load More button
         document.getElementById("loadMoreBtn").style.display = currentIndex >= filtered.length ? "none" : "block";
 
     } catch (error) {
@@ -80,15 +77,15 @@ async function renderPokemon() {
         pokemonContainer.innerHTML = `<p>Er is iets misgegaan bij het laden van de data. Controleer je internetverbinding.</p>`;
         document.getElementById("loadMoreBtn").style.display = "none";
     } finally {
-        loading.style.display = "none"; // hide loading
+        loading.style.display = "none";
     }
 }
 
 // type rendering
 async function renderCategoryButtons() {
-    const types = await getAllTypes(); // fetch types
+    const types = await getAllTypes();
     const container = document.getElementById("typeContainer");
-    container.innerHTML = ""; // clear existing buttons
+    container.innerHTML = "";
 
     types.forEach(type => {
         const btn = document.createElement("button");
@@ -98,18 +95,15 @@ async function renderCategoryButtons() {
         // click handler
         btn.addEventListener("click", () => {
             if (selectedTypes.has(type.name)) {
-                // unselect
                 selectedTypes.delete(type.name);
                 btn.style.backgroundColor = ""; // reset color
                 btn.style.color = "";
             } else {
-                // select
                 selectedTypes.add(type.name);
                 btn.style.backgroundColor = "blue"; // selected color
                 btn.style.color = "white";
             }
 
-            // filter Pokémon based on selected types
             filterPokemonByType();
         });
 
@@ -122,14 +116,12 @@ async function filterPokemonByType() {
     pokemonContainer.innerHTML = "";
     currentIndex = 0;
 
-    // if no type is selected, show all Pokémon (with search filter)
     if (selectedTypes.size === 0) {
         filteredPokemons = [...allPokemons];
-        renderPokemon();  // will respect current search term
+        renderPokemon();  
         return;
     }
 
-    // fetch Pokémon for all selected types
     let typeFiltered = [];
 
     for (const typeName of selectedTypes) {
@@ -137,28 +129,23 @@ async function filterPokemonByType() {
         typeFiltered.push(...typeData.pokemon.map(p => p.pokemon));
     }
 
-    // remove duplicates
     const uniquePokemons = Array.from(new Map(typeFiltered.map(p => [p.name, p])).values());
 
-    // override filteredPokemons for rendering
     filteredPokemons.splice(0, filteredPokemons.length, ...uniquePokemons);
 
     renderPokemon(); // render first batch
 }
 
-// handles search
 function zoekbarUpdated() {
     const input = document.getElementById("pokemonSearch");
     search = input.value;
-    currentIndex = 0;               // reset index for new search
-    document.getElementById("pokemonContainer").innerHTML = ""; // clear container
-    filterPokemonByType();           // respects selected types + search
+    currentIndex = 0;
+    document.getElementById("pokemonContainer").innerHTML = "";
+    filterPokemonByType();
 }
 
-// event listeners
 document.getElementById("pokemonSearch").addEventListener("input", zoekbarUpdated);
 document.getElementById("loadMoreBtn").addEventListener("click", renderPokemon);
 
-// load
 getEveryPokemon();
 renderCategoryButtons();
